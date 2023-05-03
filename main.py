@@ -57,10 +57,10 @@ def makeIntro(characters, random_characters):
     # Center the vs_clip in the video resolution
     vs_clip = vs_clip.fx(vfx.mask_color, color=[30, 130, 35], thr=180, s=5)
     vs_clip = vs_clip.resize(width=video_resolution[1])
-
+    
     vs_clip = vs_clip.set_start(1)
     vs_clip = vs_clip.set_end(3)
-
+    vs_clip = vs_clip.fadeout(0.2)
 
     intro_Final = CompositeVideoClip([IntroBackgroundClip, vs_clip.set_position(("center", "center"))])
     return intro_Final
@@ -92,13 +92,54 @@ def getStats(characters):
                     random_stats = random.sample(potential_stats, k=5)
                     for skill in random_stats:
                         stats_file_data['skills'][skill] = random.randint(0, 10)
+                else:
+                    num_manual_stats = 5
+                    stats_file_data['skills'] = {}
+                    for i in range(num_manual_stats):
+                        stat = input(f"Enter stat {i+1}: ")
+                        stat_name, stat_value = stat.split('=')
+                        stat_name = stat_name.strip()
+                        stat_value = int(stat_value.strip())
+                        stats_file_data['skills'][stat_name] = stat_value
                 with open(stats_file, 'w') as f:
                     json.dump(stats_file_data, f)
                 stats.append(stats_file_data)
             else:
                 print("To Proceed You Must Create a Stats File, This Can either be done manually or automated.")
-    print(stats)
+                
     return stats
+
+def compareStats(charaterStats):
+    skills = set()
+    for character in charaterStats:
+        skills.update(character['skills'].keys())
+
+    overall_scores = {character['name']: sum(character['skills'].values()) for character in charaterStats}
+    results = {}
+
+    for i, skill in enumerate(skills):
+        character1_score = charaterStats[0]['skills'].get(skill, 0)
+        character2_score = charaterStats[1]['skills'].get(skill, 0)
+
+        if character1_score == character2_score:
+            random_winner = charaterStats[random.randint(0, 1)]['name']
+            overall_scores[random_winner] += 1
+            print(f"Tie breaker randomising {skill} winner: {random_winner}")
+            winner = random_winner
+        else:
+            winner = charaterStats[0]['name'] if character1_score > character2_score else charaterStats[1]['name']
+            overall_scores[winner] += 1
+
+        results[skill] = winner
+
+    overall_winner_score = max(overall_scores.values())
+    overall_winners = [k for k, v in overall_scores.items() if v == overall_winner_score]
+    overall_winner = overall_winners[0] if len(overall_winners) == 1 else random.choice(overall_winners)
+    results['overall_winner'] = overall_winner
+
+    return json.dumps(results, indent=4)
+
+
 
 def renderFinal(intro):
 
@@ -117,7 +158,10 @@ if __name__ == "__main__":
     characters, random_characters = selectcharacters()
     intro = makeIntro(characters, random_characters)
     characterStats = getStats(characters)
-    renderFinal(intro)
+    statWinner = compareStats(characterStats)
+    print(statWinner)
+
+    #renderFinal(intro)
     
 
 
