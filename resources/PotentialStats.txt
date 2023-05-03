@@ -1,0 +1,12 @@
+Strength
+Flight
+Speed
+Teleportation
+Regeneration
+Intelligence
+Magic
+Combat
+Stealth
+Agility
+Endurance
+Wisdom
